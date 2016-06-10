@@ -1,0 +1,15 @@
+master:
+    yum install -y epel-release
+    yum install -y salt-master salt-minion
+    vim /etc/salt/minion
+        change master and id
+    service salt-master start
+    service salt-minion start
+minion:
+    yum install -y epel-release
+    yum install -y salt-minion
+    vim /etc/salt/minion
+        change master and id
+    service salt-minion start
+
+

@@ -1,0 +1,43 @@
+系统：CentOS release 6.7 (Final) 最小化安装
+1.下载
+# wget http://mirrors.sohu.com/mysql/MySQL-5.5/mysql-5.5.50.tar.gz
+# wget http://cdn.mysql.com/archives/mysql-5.5/mysql-5.5.38.tar.gz
+2.编译mysql
+依赖包
+# yum install -y epel-release
+# yum install -y yum install -y gcc bison bison-devel glibc-devel gcc-c++ make cmake ncurses ncurses-devel
+编译安装
+groupadd mysql
+useradd -g mysql mysql -s /sbin/nologin
+tar xf mysql-5.5.50.tar.gz
+cd mysql-5.5.50
+cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
+-DMYSQL_UNIX_ADDR=/tmp/mysql.sock \
+-DDEFAULT_CHARSET=utf8 \
+-DDEFAULT_COLLATION=utf8_general_ci \
+-DWITH_EXTRA_CHARSETS:STRING=all \
+-DWITH_MYISAM_STORAGE_ENGINE=1 \
+-DWITH_INNOBASE_STORAGE_ENGINE=1 \
+-DWITH_READLINE=1 \
+-DENABLED_LOCAL_INFILE=1 \
+-DMYSQL_DATADIR=/data/mysql
+
+make
+make install
+
+cp /usr/local/mysql/support-files/my-small.cnf /etc/my.cnf
+mkdir -p /data/database/mysql
+chown -R  mysql. /data/database 
+echo "export PATH=$PATH:/usr/local/mysql/bin/" >> ~/.bashrc
+. ~/.bashrc
+/usr/local/mysql/scripts/mysql_install_db --user=mysql --datadir=/data/database/mysql --basedir=/usr/local/mysql --builddir=/usr/local/mysql
+
+vi /etc/my.cnf
+在[mysqld]标签下加入一行
+user = mysql
+cp support-files/mysql.server  /etc/init.d/mysqld
+chmod 755 /etc/init.d/mysqld
+vim /etc/init.d/mysqld 加入datadir=/data/database/mysql
+service mysqld start
+chkconfig --add mysqld
+#mysqladmin password '123456'

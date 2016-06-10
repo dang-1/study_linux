@@ -1,0 +1,20 @@
+1.get file
+mysql-cluster-gpl-7.4.11-linux-glibc2.5-x86_64.tar.gz
+2.
+# useradd -s /sbin/nologin mysql 
+# yum install -y epel-release
+# yum install -y gcc libaio* perl perl-devel
+
+# tar xf mysql-cluster-gpl-7.4.11-linux-glibc2.5-x86_64.tar.gz 
+# mv mysql-cluster-gpl-7.4.11-linux-glibc2.5-x86_64 /usr/local/mysql
+# cd /usr/local/mysql
+# mkdir -p /data/mysql 
+# chown -R mysql:mysql /data/mysql
+# ./scripts/mysql_install_db --user=mysql --datadir=/data/mysql
+# cp support-files/my-default.cnf /etc/my.cnf 
+# cp support-files/mysql.server /etc/init.d/mysqld
+# chmod 755 /etc/init.d/mysqld
+# vim /etc/init.d/mysqld
+需要修改的地方有 “datadir=/data/mysql” （前面初始化数据库时定义的目录）。把启动脚本加入系统服务项，设定开机启动并启动 mysql
+# service mysqld start
+
