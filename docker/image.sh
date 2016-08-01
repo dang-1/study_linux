@@ -22,8 +22,8 @@
      # -t 分配一个伪终端
  docker run -d  #可以让容器在后台运行 
      eg:docker run -d centos  bash -c "for i in `seq 1 100`; do echo "123"; sleep 1; done "
- docker run --name web -itd centos bash // --name 给容器自定义名字
- docker run --rm -it centos bash -c "sleep 30" //--rm可以让容器退出后直接删除，在这里命令执行完容器就会退出，不能和-d一起使用
+ docker run --name web -itd centos bash # --name 给容器自定义名字
+ docker run --rm -it centos bash -c "sleep 30" #--rm可以让容器退出后直接删除，在这里命令执行完容器就会退出，不能和-d一起使用
  docker ps #查看运行的容器，加上-a 可以查看所有的容器
 
 # start images
