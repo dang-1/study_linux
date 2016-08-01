@@ -6,8 +6,7 @@ useage:fine [路径] [参数]
 
 -name filename： 直接查找该文件名的文件，这个选项使用很多。
     # find /data/ -name *.txt
--type filetype： 通过文件类型查找。文件类型在前面部分已经简单介绍过，相信你已经大体上了解了。
-    # filetype 包含了 f/b/c/d/l/s 等。
+-type filetype： 通过文件类型查找.# filetype 包含了 f/b/c/d/l/s 等。
 
 
 
