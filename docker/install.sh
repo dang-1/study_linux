@@ -14,4 +14,4 @@ centos 7
 
 
 
-
+![dang icom ](https://github.com/dang-1/study_linux/blob/master/picture/test.jpg)
