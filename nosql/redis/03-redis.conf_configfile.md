@@ -1,4 +1,4 @@
-### redis.conf 配置参数
+#### redis.conf 配置参数
 
     daemonize no #是否作为守护进程运行，默认为否，改成yes会生成一个pid文件。
     pidfile /var/lib/redis.pid  #如果以后台进程运行，则需要指定一个pid，默认为/var/run/redis.pid。
@@ -18,7 +18,7 @@
     client-output-buffer-limit slave 256mb 64mb 60 #向slave发送rdb 时的时间、buffer限制。
     client-output-buffer-limit pubsub 32mb 8mb 60 #向订阅者发送数据时的时间、buffer限制。
     
-### 持久化-RDB
+#### 持久化-RDB
 
     save 900 1 #当一条keys数据改变时，900秒刷新到disk一次
     save 300 10 #当有10条keys数据改变时，300秒刷新到disk一次
@@ -29,7 +29,7 @@
     #则在启动用户的home目录下。
     dir /var/lib/redis/  #本地数据库存放路径，默认值为 ./
 
-### 持久化-AOF
+#### 持久化-AOF
 
     appendonly no #指定是否在每次更新操作后进行日志记录，Redis在默认情况下是异步的把数据写入
     #磁盘，如果不开启，可能会在断电时导致一段时间内的数据丢失。因为 redis本身同步数据文件是按
@@ -39,7 +39,7 @@
     #always：表示每次更新操作后手动调用fsync()将数据写到磁盘（慢，安全）,
     #everysec：表示每秒同步一次（折衷，默认值）)。
 
-### replication -redis的复制配置
+#### replication -redis的复制配置
 
     slave of <masterip> <masterport> #设置主从服务器的主服务器的IP及端口
     masterauth <master-password> #当本机为从服务时，设置主服务器的链接密码
@@ -47,7 +47,7 @@
     #AUTH命令提供密码，默认关闭
     
 
-### virtual memory 虚拟内存
+#### virtual memory 虚拟内存
 
     vm-enabled no #指定是否启用虚拟内存机制，默认值为no，VM机制将数据分页存放，由Redis将访问量
     #较少的页即冷数据swap到磁盘上，访问多的页面由磁盘自动换出到内存中（在后面的文章我会仔细分析
@@ -71,7 +71,7 @@
 最好使用linux ext3 等对稀疏文件支持比较好的文件系统保存你的swap文件.
 vm-max-threads这个参数,可以设置访问swap文件的线程数,设置最好不要超过机器的核数.如果设置为0,那么所有对swap文件的操作都是串行的.可能会造成比较长时间的延迟,但是对数据完整性有很好的保证.
 
-### advanced config
+#### advanced config
 
     glueoutbuf yes #设置在向客户端应答时，是否把较小的包合并为一个包发送，默认为开启
     hash-max-zipmap-entries 64 #指定在超过一定的数量时，采用一种特殊的哈希算法
