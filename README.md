@@ -1,3 +1,3 @@
 # study_linux
-# all experience in study linux.
+# all experiences in study linux.
 
