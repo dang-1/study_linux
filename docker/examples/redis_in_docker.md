@@ -1,6 +1,6 @@
-### redis in docker 
-#### version 1.0
-date: 2016 08 17
+### 思想
+先安装需要的gcc，vim，make，然后编译redis，然后保存成一个image，重新启动该image并映射端口
+### 操作方法
     docker pull centos
     docker run -itd -v /data/:/data/ centos
     docker exec -it def bash
