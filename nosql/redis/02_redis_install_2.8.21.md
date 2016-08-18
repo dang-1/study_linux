@@ -92,16 +92,6 @@ redis-cli save 或者 redis-cli -p 6380 save（指定端口）
 注意，以上部署操作需要具备一定的权限，比如复制和设定内核参数等。  
 执行redis-benchmark命令时也会将内存数据写入硬盘。   
 
-
-
-
-
-   redis的性能监控、redis 的其他的command命令的使用及相关文档：
-
-    http://langgufu.iteye.com/blog/1434408  ##redis 常用命令
-
-   http://redisdoc.com/  #redis 命令参考
-
-
-    http://blog.csdn.net/wzzfeitian/article/details/42081969  ##redis 备份与恢复
+#### 8.连接
+    redis-cli -a passwd
 
