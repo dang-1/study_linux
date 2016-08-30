@@ -1,0 +1,13 @@
+查看设置的binlog的过期时间
+> show variables like '%expire%';
+在线设置binlog的过期时间
+> set global expire_logs_days=10;
+为了使之生效，需要flush logs。
+
+binlog过多的时候，先使用purge命令
+> purge binary logs to 'log-bin.000056';
+将log-bin.000056之前的binary logs清理
+> purge binary logs before '2016-06-28 12:16:56'
+将指定时间之前的binary logs清掉
+
+注意，不要轻易手动去删除binlog，会导致binlog.index和真实存在的binlog不匹配，而导致expire_logs_day失效
