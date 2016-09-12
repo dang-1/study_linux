@@ -7,7 +7,20 @@ lsof(list open files)是一个列出当前系统打开文件的工具。在linux
 # 1.命令格式
     lsof ［options］ filename
 # 2.命令功能
+用于查看你进程开打的文件，打开文件的进程，进程打开的端口(TCP、UDP)。找回/
+恢复删除的文件。是十分方便的系统监视工具，因为 lsof 需要访问核心内存和各
+种文件，所以需要root用户执行。  
+lsof打开的文件可以是：
 
+    1.普通文件
+    2.目录
+    3.网络文件系统的文件
+    4.字符或设备文件
+    5.(函数)共享库
+    6.管道，命名管道
+    7.符号链接
+    8.网络文件（例如：NFS file、网络socket，unix域名socket）
+    9.还有其它类型的文件，等等
 # 3.命令参数
 lsof 常见的用法是查找应用程序打开的文件的名称和数目。可用于查找出某个特定应用程序将日志数据记录到何处，
 或者正在跟踪某个问题。  
@@ -21,7 +34,7 @@ lsof 常见的用法是查找应用程序打开的文件的名称和数目。可
     lsof -u username  显示所属user进程打开的文件
     lsof -g gid 显示归属gid的进程情况
     lsof +d /DIR/ 显示目录下被进程打开的文件
-    lsof +D /DIR/ 同上，但是会搜索目录下的所有目录，时间相对较长
+    lsof +D /DIR/ 递归列出目录下被打开的文件，时间相对较长
     lsof -d FD 显示指定文件描述符的进程
     lsof -n 不将IP转换为hostname，缺省是不加上-n参数
     lsof -i 用以显示符合条件的进程情况
@@ -48,10 +61,11 @@ lsof 常见的用法是查找应用程序打开的文件的名称和数目。可
     init       1         root  mem      REG       3,3       223280     1091668  /lib/libsepol.so.1
     init       1         root  mem      REG       3,3       564136     1091607  /lib/ld-2.6.so
     init       1         root  10u      FIFO      0,15                  1309     /dev/initctl
-每行显示一个打开的文件，若不指定条件默认将显示所有进程打开的所有文件。lsof输出各列信息的意义如下：   
+#### 每行显示一个打开的文件，若不指定条件默认将显示所有进程打开的所有文件。lsof输出各列信息的意义如下：   
 
     COMMAND：进程的名称
     PID：进程标识符
+    PPID：父进程标识符（需要指定-R参数）
     USER：进程所有者
     FD：文件描述符，应用程序通过文件描述符识别该文件。如cwd、txt等
     TYPE：文件类型，如DIR、REG等
@@ -59,16 +73,63 @@ lsof 常见的用法是查找应用程序打开的文件的名称和数目。可
     SIZE：文件的大小
     NODE：索引节点（文件在磁盘上的标识）
     NAME：打开文件的确切名称
-其中FD 列中的文件描述符cwd 值表示应用程序的当前工作目录，这是该应用程序启动的目录，除非它本身对这个目录
-进行更改。  
+#### FD：文件描述符，应用程序通过文件描述符识别该文件。如cwd、txt等。  
+    
+    （1）cwd：表示current work dirctory，即：应用程序的当前工作目录，这是该应用程序启动的目录，除非它本身对这个目录进行更改
+    （2）txt ：该类型的文件是程序代码，如应用程序二进制文件本身或共享库，如上列表中显示的 /sbin/init 程序
+    （3）lnn：library references (AIX);
+    （4）er：FD information error (see NAME column);
+    （5）jld：jail directory (FreeBSD);
+    （6）ltx：shared library text (code and data);
+    （7）mxx ：hex memory-mapped type number xx.
+    （8）m86：DOS Merge mapped file;
+    （9）mem：memory-mapped file;
+    （10）mmap：memory-mapped device;
+    （11）pd：parent directory;
+    （12）rtd：root directory;
+    （13）tr：kernel trace file (OpenBSD);
+    （14）v86  VP/ix mapped file;
+    （15）0：表示标准输出
+    （16）1：表示标准输入
+    （17）2：表示标准错误
+        一般在标准输出、标准错误、标准输入后还跟着文件状态模式：r、w、u等
+        （1）u：表示该文件被打开并处于读取/写入模式
+        （2）r：表示该文件被打开并处于只读模式
+        （3）w：表示该文件被打开并处于
+        （4）空格：表示该文件的状态模式为unknow，且没有锁定
+        （5）-：表示该文件的状态模式为unknow，且被锁定
+        同时在文件状态模式后面，还跟着相关的锁
+        （1）N：for a Solaris NFS lock of unknown type;
+        （2）r：for read lock on part of the file;
+        （3）R：for a read lock on the entire file;
+        （4）w：for a write lock on part of the file;（文件的部分写锁）
+        （5）W：for a write lock on the entire file;（整个文件的写锁）
+        （6）u：for a read and write lock of any length;
+        （7）U：for a lock of unknown type;
+        （8）x：for an SCO OpenServer Xenix lock on part      of the file;
+        （9）X：for an SCO OpenServer Xenix lock on the      entire file;
+        （10）space：if there is no lock.
+ 
 txt 类型的文件是程序代码，如应用程序二进制文件本身或共享库，如上列表中显示的 /sbin/init 程序。其次数值
 表示应用程序的文件描述符，这是打开该文件时返回的一个整数。如上的最后一行文件/dev/initctl，其文件描述符
 为 10。u 表示该文件被打开并处于读取/写入模式，而不是只读 ® 或只写 (w) 模式。同时还有大写 的W 表示该
 应用程序具有对整个文件的写锁。该文件描述符用于确保每次只能打开一个应用程序实例。初始打开每个应用程序
 时，都具有三个文件描述符，从 0 到 2，分别表示标准输入、输出和错误流。所以大多数应用程序所打开的文件
-的 FD 都是从 3 开始。   
+的 FD 都是从 3 开始。     
+
+#### TYPE
+TYPE：文件类型，如DIR、REG等，常见的文件类型
+
+    （1）DIR：表示目录
+    （2）CHR：表示字符类型
+    （3）BLK：块设备类型
+    （4）UNIX： UNIX 域套接字
+    （5）FIFO：先进先出 (FIFO) 队列
+    （6）IPv4：网际协议 (IP) 套接字
+
 与 FD 列相比，Type 列则比较直观。文件和目录分别称为 REG 和 DIR。而CHR 和 BLK，分别表示字符和块设备；
-或者 UNIX、FIFO 和 IPv4，分别表示 UNIX 域套接字、先进先出 (FIFO) 队列和网际协议 (IP) 套接字。   
+或者 UNIX、FIFO 和 IPv4，分别表示 UNIX 域套接字、先进先出 (FIFO) 队列和网际协议 (IP) 套接字。 
+
 
 ### 4.2查找谁在使用文件系统
 在卸载文件系统时，如果该文件系统中有任何打开的文件，操作通常将会失败。那么通过lsof可以找出那些进程在使用当前要卸载的文件系统，如下：   
@@ -140,3 +201,88 @@ txt 类型的文件是程序代码，如应用程序二进制文件本身或共�
     X         1670 root txt       REG    3,3 1716396 1428336 /usr/bin/Xorg
     kdm       1671 root txt       REG    3,3  132548 1428194 /usr/bin/kdm
     startkde  2427 root txt       REG    3,3  645408 1544195 /bin/bash
+
+### 4.6 查看谁正在使用某个文件，也就是说查找某个文件相关的进程
+
+    lsof /bin/bash
+    COMMAND  PID USER  FD   TYPE DEVICE SIZE/OFF    NODE NAME
+    bash    5635 root txt    REG  252,1   940416 1053516 /bin/bash
+
+
+### 4.7 列出某个用户打开的文件信息
+
+    lsof -u username
+说明:   
+-u 选项，u其实是user的缩写  
+
+### 4.8列出某个程序进程所打开的文件信息
+
+    lsof -c mysql
+说明:
+-c 选项将会列出所有以mysql这个进程开头的程序的文件，其实你也可以写成 lsof | grep mysql, 但是第一种方法明显比第二种方法要少打几个字符了
+ 
+### 4.9列出多个进程多个打开的文件信息
+
+    lsof -c mysql -c apache
+### 4.10 列出某个用户以及某个进程所打开的文件信息
+
+    lsof  -u test -c mysql 
+说明：
+用户与进程可相关，也可以不相关
+
+### 4.11 列出除了某个用户外的被打开的文件信息
+    lsof -u ^root
+说明：
+^这个符号在用户名之前，将会把是root用户打开的进程不让显示
+
+### 4.12 通过某个进程号显示该进行打开的文件
+    lsof -p 1
+    
+### 4.13 列出多个进程号对应的文件信息
+    lsof -p 1,2,3
+### 4.14 列出除了某个进程号，其他进程号所打开的文件信息
+    lsof -p ^1
+### 4.15 列出所有的网络连接
+    lsof -i
+### 4.16 列出所有tcp 网络连接信息
+    lsof -i tcp
+### 4.17 列出所有udp网络连接信息
+    lsof -i udp
+### 4.18 列出谁在使用某个端口
+    lsof -i :3306
+### 4.19 列出谁在使用某个特定的udp端口
+    lsof -i udp:55
+    #或者：特定的tcp端口
+    lsof -i tcp:80
+    
+### 4.20 列出某个用户的所有活跃的网络端口
+    lsof -a -u test -i
+### 4.21 列出所有网络文件系统
+    lsof -N
+
+### 4.22 某个用户组所打开的文件信息
+    lsof -g 5555
+### 4.23 根据文件描述列出对应的文件信息
+
+    lsof -d description(like 2)
+        lsof  -d  txt
+        lsof  -d  1
+        lsof  -d  2
+0表示标准输入，1表示标准输出，2表示标准错误，从而可知：所以大多数应用程序所打开的文件的 FD 都是从 3 开始
+### 4.24 根据文件描述范围列出文件信息
+    lsof -d 2-3
+### 4.25 列出COMMAND列中包含字符串" sshd"，且文件描符的类型为txt的文件信息
+    lsof -c sshd -a -d txt
+    #输出：
+    [root@localhost soft]# lsof -c sshd -a -d txt
+    COMMAND   PID USER  FD   TYPE DEVICE   SIZE    NODE NAME
+    sshd     2756 root txt    REG    8,2 409488 1027867 /usr/sbin/sshd
+    sshd    24155 root txt    REG    8,2 409488 1027867 /usr/sbin/sshd
+    sshd    24905 root txt    REG    8,2 409488 1027867 /usr/sbin/sshd
+    sshd    24937 root txt    REG    8,2 409488 1027867 /usr/sbin/sshd
+
+ 
+### 4.26 列出被进程号为1234的进程所打开的所有IPV4 network files 
+    lsof -i 4 -a -p 1234
+### 4.27 列出目前连接主机上端口为：20，21，22，25，53，80相关的所有文件信息，且每隔3秒不断的执行lsof指令
+    lsof -i :20,21,22,25,53,80  -r  3
