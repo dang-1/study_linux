@@ -1,10 +1,12 @@
 # mysql5.5 httpd 2.2 php 5.4
 
+## 
+
 ## 1.安装mysql5.5 参见安装mysql
 
 ## 2.安装httpd 2.2
 
-    yum install gcc zlib-devel openssl-devel
+    yum install -y gcc zlib-devel openssl-devel
     tar xf 
     cd 
     ./configure \
@@ -33,6 +35,7 @@
 
 
 ## 3.安装php 5.4
+在编译 php 的时候，需要指定mysql 以及 apache 的路径，故放最后面。
     
     yum install -y libxml2-devel bzip2 bzip2-devel ibpng reetype
     yum install -y libpng-devel freetype-devel libmcrypt-devel libjpeg-devel
@@ -60,7 +63,33 @@
     --enable-exif \
     --disable-ipv6
 
+    make
+    make install
+    
+    cp php.ini-production /usr/local/php/etc/php.ini
+    
+    在/usr/local/apache/modules/会有一个libphp5.so
+    
+    然后找到：
+    AddType application/x-gzip .gz .tgz
+    在该行下面添加:
+    AddType application/x-httpd-php .php
 
+    DirectoryIndex index.html index.htm index.php
+    
+    service iptables stop
+    setenforce 0
+    
+    测试解析
+    /usr/local/apache/htdocs/1.php 
+    <?php
+    echo "php works."; 
+    ?>
+    
+    cat info.php 
+    <?php
+    phpinfo();
+    ?>
 
 
 
