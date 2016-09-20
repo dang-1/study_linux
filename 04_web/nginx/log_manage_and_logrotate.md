@@ -1,188 +1,143 @@
-## 1.简介  
-Nginx 配置文件主要分为4部分：main（全局设置）、server（主机设置）、
-upstream（负载均衡服务器设置）和 location（URL匹配特定位置的设置）。  
-main部分设置的指令将影响其他所有设置；server部分的指令主要用于指定主机和端
-口；upstream指令主要用于负载均衡，设置一系列的后端服务器；location部分用于
-匹配网页位置。这四者之间的关系如下：server继承 main，location继承
-server，upstream既不会继承其他设置也不会被继承。
 
-## 结构：  
+## 一、日志分类
 
+访问日志  
+错误日志  
+可以在http和server模块中配置，nginx有一个非常灵活的日志记录模式。每个级别的配置可以有各自独立的访问日志。日志格式通过log_format命令来定义
+### 1.访问日志
 
-
+#### 1.1功能 
+主要记录客户端访问Nginx的每一个请求  
 
 
-
-### 示例解释：
-
+#### 1.2格式：
+    log_format用来设置日志格式，只能在http模块下设置
+    log_format name   name(格式名称)   type(格式样式)
+#### 1.3示例：
+默认配置
     
-    user www www;
-    #定义Nginx运行的用户和用户组
-    worker_processes 8;
-    #nginx进程数，建议设置为等于CPU总核心数。
-    error_log /var/log/nginx/error.log info;
-    #全局错误日志定义类型，[ debug | info | notice | warn | error | crit ]
-    pid /var/run/nginx.pid;
-    #进程文件
-    worker_rlimit_nofile 65535;
-    #一个nginx进程打开的最多文件描述符数目，理论值应该是最多打开文件数（系统的
-    #值ulimit -n）与nginx进程数相除，但是nginx分配请求并不均匀，所以建议与ulimit
-    #-n的值保持一致。
+    log_format  main  '$remote_addr - $remote_user [$time_local]"$request" '
+        '$status $body_bytes_sent"$http_referer" '
+        '"$http_user_agent" "$http_x_forwarded_for"';   
+
+下面的示例会记录代理的 ip 和真实客户端真实 ip，建议大家平时用这个配置。  
+
+    log_format combined_realip '$proxy_add_x_forwarded_for - $remote_user [$time_local] '
+        '"$request" $status $body_bytes_sent '
+        '"$http_referer" "$http_user_agent"';
+生产环境示例
+
+    log_format  main  '$http_host-$http_x_forwarded_for  ${request_time}s- [$time_local] "$request"'
+        '$status $body_bytes_sent"$http_referer" "$http_user_agent" $remote_addr ' ;
+字段含义：
+
+    $remote_addr #远程客户端的IP地址。
+    $remote_user #远程客户端用户名称，如果网站设置了用户验证的话就会有，否则空白
+    [$time_local] #访问的时间与时区比如18/Jul/2012:17:00:01+0800时间信息最后的"+0800"表示服务器所处时区位于UTC之后的8小时。
+    $request #记录请求的url和http协议
+    $status #记录请求返回的http状态码.
+    $body_bytes_sent #记录发送给客户端的文件主体内容的大小
+    $http_referer #记录 记录从哪个页面链接访问过来的。
+    $http_user_agent #记录客户端浏览器信息
+    $http_x_forwarded_for #客户端的真实ip。当nginx前面有代理服务器时，$remote_addr获取到的只能是nginx上一级的IP，
+    #而反向代理服务器在转发请求的http头信息中可以增加x_forwarded_for信息用以记录原有客户端的IP地址和原来客户端的
+    #请求的服务器地址，$http_x_forwarded_for参数就是承接上一级传递的客户端IP参数。从而就获取到了客户端的真实IP。
+
+#### 1.4定义文件
+access_log 指令用来指定日志文件的存放路径，可以在http、server、location中设置    
+举例说明如下  
+
+    access_log  logs/access.log  main;
+    #如果想关闭日志可以如下
+    access_log off;
+
+### 2.错误日志
+错误日志主要记录客户端访问Nginx出错时的日志格式，不支持自定义。  
+如果不指定路径的话默认是在logs下。  
+由指令error_log来指定具体格式如下  
     
-    #工作模式与连接数上限
-    events
-    {
-        use epoll;
-        #参考事件模型，use [ kqueue | rtsig | epoll | /dev/poll | select | poll
-        #]; epoll模型是Linux 2.6以上版本内核中的高性能网络I/O模型，如果跑在
-        #FreeBSD上面，就用kqueue模型。
-        worker_connections 65535;
-        #单个进程最大连接数（最大连接数=连接数*进程数）
-    }
+    error_log  path(存放路径)  level(日志等级)[debug | info | notice | warn | error |crit]
 
-    #设定http服务器
-    http
-        {
-        include mime.types; #文件扩展名与文件类型映射表
-        default_type application/octet-stream; #默认文件类型
-        #charset utf-8; #默认编码        
-        server_names_hash_bucket_size 128; #服务器名字的hash表大小        
-        server_names_hash_max_size 4096;
-        log_format combined_realip '$remote_addr $http_x_forwarded_for [$time_local]'
-            '$host "$request_uri" $status'
-            '"$http_referer" "$http_user_agent"';
-        sendfile on;#开启高效文件传输模式，sendfile指令指定nginx是否调用sendfile
-        #函数来输出文件，对于普通应用设为 on，如果用来进行下载等应用磁盘IO重负载
-        #应用，可设置为off，以平衡磁盘与网络I/O处理速度，降低系统的负载。
-        #注意：如果图片显示不正常把这个改 成off。
-        #autoindex on; #开启目录列表访问，合适下载服务器，默认关闭。
-        tcp_nopush on; #防止网络阻塞
-        tcp_nodelay on; #防止网络阻塞
-        keepalive_timeout 30; #长连接超时时间，单位是秒
-        
-        client_header_timeout 3m;
-        client_body_timeout 3m;
-        send_timeout 3m;
-        connection_pool_size 256;
-        client_header_buffer_size 1k; ##上传文件大小限制
-        large_client_header_buffers 8 4k;#设定请求缓
-        request_pool_size 4k;
-        output_buffers 4 32k;
-        postpone_output 1460;
-        client_max_body_size 10m; #设定请求缓
-        client_body_buffer_size 256k;
-        client_body_temp_path /usr/local/nginx/client_body_temp;
-        proxy_temp_path /usr/local/nginx/proxy_temp;
-        fastcgi_temp_path /usr/local/nginx/fastcgi_temp;
-        fastcgi_intercept_errors on;
-        tcp_nodelay on;
-        
-        #FastCGI相关参数是为了改善网站的性能：减少资源占用，提高访问速度。下面参数看字面意思都能理解。
-        #fastcgi_connect_timeout 300;
-        #fastcgi_send_timeout 300;
-        #fastcgi_read_timeout 300;
-        #fastcgi_buffer_size 64k;
-        #fastcgi_buffers 4 64k;
-        #fastcgi_busy_buffers_size 128k;
-        #fastcgi_temp_file_write_size 128k;
+### 3.配置
 
-        #gzip模块
-        gzip on; #开启gzip压缩输出
-        gzip_min_length 1k; #最小压缩文件大小
-        gzip_buffers 4 8k; #压缩缓冲区
-        gzip_comp_level 5; #压缩等级
-        gzip_http_version 1.1; #压缩版本（默认1.1，前端如果是squid2.5请使用1.0）
-        gzip_types text/plain application/x-javascript text/css text/htm application/xml; 
-        #压缩类型，默认就已经包含text/html，所以下面就不用再写了，写上去也不会有问题，但是会有一个warn。
-        #gzip_vary on;
-        
-        #limit_zone crawler $binary_remote_addr 10m; #开启限制IP连接数的时候需要使用
-        
-        include /usr/local/nginx/conf/vhosts/*.conf;
-        }
-
-## 虚拟主机
-    
+    cat www.test.com.conf 
     server
-        {
-        listen 80; #监听端口
-        server_name www.test.com test.com; #主机名，可以多个，空格隔开
+    {
+        listen 80;
+        server_name www.test.com www.aaa.com;
+        if ($host != 'www.test.com' ) {
+            rewrite ^/(.*)$ http://www.test.com/$1 permanent;
+        }
         index index.html index.htm index.php;
-        root /data/www/www.test.com;
-        
-        location ~ .*\.(php|php5)?$
-            {
+        root /data/www.test.com;
+        access_log /data/logs/nginx/test.com_access.log combined_realip;
+        location ~ .*\.(gif|jpg|jpeg|png|bmp|swf|js|css)$
+        {
+            access_log off;
+        }
+    
+        location ~ .*admin\.php$ {
+            auth_basic "discuz auth";
+            auth_basic_user_file /usr/local/nginx/conf/.htpasswd;
+            include fastcgi_params;
             fastcgi_pass 127.0.0.1:9000;
             fastcgi_index index.php;
-            include fastcgi.conf;
-            }
-        
-        #图片缓存时间设置
-        location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$
-            {
-            expires 10d;
-            }
-        
-        #JS和CSS缓存时间设置
-        location ~ .*\.(js|css)?$
-            {
-            expires 1h;
-            }
-        
-        #日志格式设定
-        log_format access '$remote_addr - $remote_user [$time_local] "$request" '
-        '$status $body_bytes_sent "$http_referer" '
-        '"$http_user_agent" $http_x_forwarded_for';
-        
-        access_log /var/log/nginx/ha97access.log access; #定义本虚拟主机的访问日志
-        
-        #对 "/" 启用反向代理
-        location / 
-            {
-            proxy_pass http://127.0.0.1:88;
-            proxy_redirect off;
-            proxy_set_header X-Real-IP $remote_addr;
-            
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;#后端的Web服务器可以通过X-Forwarded-For获取用户真实IP
-            
-            #以下是一些反向代理的配置，可选。
-            proxy_set_header Host $host;
-            client_max_body_size 10m; #允许客户端请求的最大单文件字节数
-            client_body_buffer_size 128k; #缓冲区代理缓冲用户端请求的最大字节数，
-            proxy_connect_timeout 90; #nginx跟后端服务器连接超时时间(代理连接超时)
-            proxy_send_timeout 90; #后端服务器数据回传时间(代理发送超时)
-            proxy_read_timeout 90; #连接成功后，后端服务器响应时间(代理接收超时)
-            proxy_buffer_size 4k; #设置代理服务器（nginx）保存用户头信息的缓冲区大小
-            proxy_buffers 4 32k; #proxy_buffers缓冲区，网页平均在32k以下的设置
-            proxy_busy_buffers_size 64k; #高负荷下缓冲大小（proxy_buffers*2）
-            proxy_temp_file_write_size 64k;#设定缓存文件夹大小，大于这个值，将从upstream服务器传
-            }
-        
-        #设定查看Nginx状态的地址
-        location /NginxStatus 
-            {
-            stub_status on;
-            access_log on;
-            auth_basic "NginxStatus";
-            auth_basic_user_file conf/htpasswd;
-            #htpasswd文件的内容可以用apache提供的htpasswd工具来产生。
-            }
-        
-        #本地动静分离反向代理配置
-        #所有jsp的页面均交由tomcat或resin处理
-        location ~ .(jsp|jspx|do)?$ 
-            {
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_pass http://127.0.0.1:8080;
-            }
-            
-        #所有静态文件由nginx直接读取不经过tomcat或resin
-        location ~ .*.(htm|html|gif|jpg|jpeg|png|bmp|swf|ioc|rar|zip|txt|flv|mid|doc|ppt|pdf|xls|mp3|wma)$
-            { expires 15d; }
-        location ~ .*.(js|css)?$
-            { expires 1h; }
-            
-        
+            fastcgi_param SCRIPT_FILENAME /data/www.test.com/$fastcgi_script_name;
         }
+        location ~ \.php$ {
+            include fastcgi_params;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_index index.php;
+            fastcgi_param SCRIPT_FILENAME /data/www.test.com/$fastcgi_script_name;
+        }
+    }
+
+## 二、日志管理（切割日志）
+### 1.实现方法
+脚本切割或者使用centos自带工具logrotate  
+### 2.脚本切割
+
+实现：每天定时把日志移动到备份目录，然后重新reload或者restart。这样会在原来的logs下生成新的日志文件。(提示：当日志文件被移动到备份目录后，在没有restart的之前，nginx依然会向原来的日志文件中记录访问请求，只有等restart的之后生成了新文件，才重新记录到新的日志文件中)
+
+定义日志路径，定义nginx的pid文件。
+
+    # vim /usr/local/sbin/nginx_logrotate.sh
+    #加入如下内容
+    #! /bin/bash
+    d=`date -d "-1 day" +%Y%m%d`
+    backup_dir=/data/log/nginx/back/
+    log_dir=/data/log/nginx/
+    [ -d ${backup_dir} ] || mkdir -p ${backup_dir}
+    [ -d ${log_dir} ] || mkdir -p ${log_dir}
+    /bin/mv ${log_dir}test.com_access.log ${backup_dir}$d_test.com_access.log
+    /bin/kill -HUP `cat /usr/local/nginx/logs/nginx.pid`
+对该脚本写cront计划任务，每天0点执行
+    
+### 3.系统工具logrotate
+    # vim /etc/logrotate.d/nginx
+    #加入如下内容：
+    /data/log/nginx/*.log {
+        Daily
+        Missingok
+        rotate 52
+        compress
+        delaycompress
+        notifempty
+        create 644 nobody nobody
+        sharedscripts
+        postrotate
+        [ -f /usr/local/nginx/var/nginx.pid ] && kill -USR1 `cat /usr/local/nginx/var/nginx.pid`
+        Endscript
+    }
+说明：
+第一行就要定义日志的路径，可以是多个日志。  
+daily 表示日志按天归档。  
+missingok 表示忽略所有错误，比如日志文件不存在的情况下。  
+rotate 52 表示存放的日志个数，最多就 52 个，最老的会被删除。  
+compress 表示日志要压缩。  
+delaycompress 表示压缩除了当前和最近之外的所有其他版本。  
+notifempty 表示如果日志为空，则不归档。  
+create 644 nobody nobody 定义归档日志的权限以及属主和属组。  
+sharedscripts 表示所有的日志共享该脚本，因为我们在这里指定的日志文件为多个，用来*.log。  
+postrotate 后面跟轮换过日志之后要运行的命令。  
+endscript 表示结束了。
